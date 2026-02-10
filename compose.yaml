@@ -1,0 +1,10 @@
+services:
+  postgres:
+    image: 'postgres:latest'
+    container_name: subscription_db
+    environment:
+      - 'POSTGRES_DB=subscription_db'
+      - 'POSTGRES_PASSWORD=dev@123'
+      - 'POSTGRES_USER=devLocal'
+    ports:
+      - '5433:5432'
