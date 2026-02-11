@@ -12,22 +12,22 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Data;
 
 @Entity
 @Table(name = "subscriptions")
-@Data   
+@Data
 public class SubscriptionEntity {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
-    @ManyToOne(optional = false)
+    @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
@@ -37,7 +37,8 @@ public class SubscriptionEntity {
 
     @Column(nullable = false)
     private LocalDate startDate;
-    
+
+    @Column(nullable = false)
     private LocalDate expirationDate;
 
     @Enumerated(EnumType.STRING)

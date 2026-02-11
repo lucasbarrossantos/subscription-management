@@ -1,4 +1,4 @@
-package com.globo.subscription.adapter.datasource.database.repository;
+package com.globo.subscription.adapter.datasource.database.repository.user;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;

@@ -1,4 +1,4 @@
-package com.globo.subscription.core.usecase;
+package com.globo.subscription.core.usecase.user;
 
 import java.util.UUID;
 

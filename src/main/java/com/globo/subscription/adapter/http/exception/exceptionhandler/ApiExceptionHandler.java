@@ -19,8 +19,11 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import com.globo.subscription.core.exception.ActiveSubscriptionAlreadyExistsException;
 import com.globo.subscription.core.exception.BusinessException;
 import com.globo.subscription.core.exception.EmailAlreadyExistsException;
+import com.globo.subscription.core.exception.SubscriptionAlreadyCanceledException;
+import com.globo.subscription.core.exception.SubscriptionNotFoundException;
 import com.globo.subscription.core.exception.UserNotFoundException;
 
 import lombok.RequiredArgsConstructor;
@@ -32,6 +35,45 @@ import lombok.extern.slf4j.Slf4j;
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
     private final MessageSource messageSource;
+
+    @ExceptionHandler(SubscriptionNotFoundException.class)
+    public ResponseEntity<Object> handleSubscriptionNotFound(SubscriptionNotFoundException ex, WebRequest request) {
+        HttpStatus status = HttpStatus.NOT_FOUND;
+        ProblemType problemType = ProblemType.REGISTER_NOT_FOUND;
+        String detail = ex.getMessage();
+
+        Problem problem = createProblemBuilder(status, problemType, detail)
+                .userMessage(detail)
+                .build();
+
+        return handleExceptionInternal(ex, problem, new HttpHeaders(), status, request);
+    }
+
+    @ExceptionHandler(SubscriptionAlreadyCanceledException.class)
+    public ResponseEntity<Object> handleSubscriptionAlreadyCanceled(SubscriptionAlreadyCanceledException ex, WebRequest request) {
+        HttpStatus status = HttpStatus.UNPROCESSABLE_ENTITY;
+        ProblemType problemType = ProblemType.BUSINESS_ERROR;
+        String detail = ex.getMessage();
+
+        Problem problem = createProblemBuilder(status, problemType, detail)
+                .userMessage(detail)
+                .build();
+
+        return handleExceptionInternal(ex, problem, new HttpHeaders(), status, request);
+    }
+
+    @ExceptionHandler(ActiveSubscriptionAlreadyExistsException.class)
+    public ResponseEntity<Object> handleActiveSubscriptionAlreadyExists(ActiveSubscriptionAlreadyExistsException ex, WebRequest request) {
+        HttpStatus status = HttpStatus.CONFLICT;
+        ProblemType problemType = ProblemType.BUSINESS_ERROR;
+        String detail = ex.getMessage();
+
+        Problem problem = createProblemBuilder(status, problemType, detail)
+                .userMessage(detail)
+                .build();
+
+        return handleExceptionInternal(ex, problem, new HttpHeaders(), status, request);
+    }
 
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,

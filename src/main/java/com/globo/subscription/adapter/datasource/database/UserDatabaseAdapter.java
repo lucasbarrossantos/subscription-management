@@ -9,7 +9,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
 import com.globo.subscription.adapter.datasource.database.entity.UserEntity;
-import com.globo.subscription.adapter.datasource.database.repository.UserRepository;
+import com.globo.subscription.adapter.datasource.database.repository.user.UserRepository;
 import com.globo.subscription.adapter.datasource.mapper.UserMapper;
 import com.globo.subscription.core.domain.PagedResult;
 import com.globo.subscription.core.domain.User;
