@@ -4,8 +4,8 @@ import org.springframework.stereotype.Service;
 
 import com.globo.subscription.core.domain.User;
 import com.globo.subscription.core.exception.EmailAlreadyExistsException;
-import com.globo.subscription.core.port.in.CreateUserPort;
-import com.globo.subscription.core.port.out.UserRepositoryPort;
+import com.globo.subscription.core.port.in.user.CreateUserPort;
+import com.globo.subscription.core.port.out.user.UserRepositoryPort;
 
 import lombok.AllArgsConstructor;
 

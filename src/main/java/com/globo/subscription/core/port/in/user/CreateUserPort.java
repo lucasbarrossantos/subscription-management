@@ -1,4 +1,4 @@
-package com.globo.subscription.core.port.in;
+package com.globo.subscription.core.port.in.user;
 
 import com.globo.subscription.core.domain.User;
 
