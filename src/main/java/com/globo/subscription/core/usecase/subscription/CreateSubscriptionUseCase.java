@@ -1,23 +1,25 @@
 package com.globo.subscription.core.usecase.subscription;
 
-import java.time.LocalDate;
-
-import java.util.Optional;
-
-import org.springframework.stereotype.Service;
-
 import com.globo.subscription.core.domain.Subscription;
 import com.globo.subscription.core.domain.User;
 import com.globo.subscription.core.domain.enums.SubscriptionStatus;
+import com.globo.subscription.core.domain.enums.TypePlan;
 import com.globo.subscription.core.exception.ActiveSubscriptionAlreadyExistsException;
 import com.globo.subscription.core.exception.UserNotFoundException;
 import com.globo.subscription.core.port.in.subscription.CreateSubscriptionPort;
 import com.globo.subscription.core.port.out.subscription.SubscriptionRepositoryPort;
 import com.globo.subscription.core.port.out.user.UserRepositoryPort;
 import com.globo.subscription.core.port.out.wallet.WalletPort;
-
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Optional;
+
+@Slf4j
 @Service
 @AllArgsConstructor
 public class CreateSubscriptionUseCase implements CreateSubscriptionPort {
@@ -35,24 +37,68 @@ public class CreateSubscriptionUseCase implements CreateSubscriptionPort {
             throw new ActiveSubscriptionAlreadyExistsException("Usuário " + user.getId() + " já possui uma assinatura ativa.");
         }
 
-        walletPort.debitSubscriptionPlan(user.getId(), subscription.getPlan());
-
         Optional<Subscription> latestSubscription = subscriptionRepositoryPort.findLatestByUserId(user.getId());
 
-        if (latestSubscription.isPresent()) {
-            Subscription existing = latestSubscription.get();
-            existing.setPlan(subscription.getPlan());
-            existing.setStartDate(LocalDate.now());
-            existing.setExpirationDate(LocalDate.now().plusMonths(1));
-            existing.setStatus(SubscriptionStatus.ACTIVE);
-            return subscriptionRepositoryPort.save(existing);
+        if (latestSubscription.isPresent() &&
+                SubscriptionStatus.CANCELED.equals(latestSubscription.get().getStatus())) {
+
+            return handlePlanChange(latestSubscription.get(), subscription.getPlan(), user);
         }
+
+        // Nova assinatura - débito completo
+        walletPort.debitSubscriptionPlan(user.getId(), subscription.getPlan());
 
         subscription.setUser(user);
         subscription.setStartDate(LocalDate.now());
         subscription.setExpirationDate(LocalDate.now().plusMonths(1));
+        subscription.setUpdatedAt(LocalDateTime.now());
         subscription.setStatus(SubscriptionStatus.ACTIVE);
 
+        log.info("New subscription created for user {} - plan: {}", user.getId(), subscription.getPlan());
         return subscriptionRepositoryPort.save(subscription);
+    }
+
+    private Subscription handlePlanChange(Subscription existingSubscription, TypePlan newPlan, User user) {
+        TypePlan oldPlan = existingSubscription.getPlan();
+        BigDecimal oldPrice = oldPlan.getPrice();
+        BigDecimal newPrice = newPlan.getPrice();
+
+        log.info("Handling plan change for user {} - from {} (R$ {}) to {} (R$ {})",
+                user.getId(), oldPlan, oldPrice, newPlan, newPrice);
+
+        int priceComparison = newPrice.compareTo(oldPrice);
+
+        if (priceComparison > 0) {
+            // Upgrade: novo plano é mais caro - cobrar apenas a diferença
+            BigDecimal difference = newPrice.subtract(oldPrice);
+            log.info("Plan upgrade detected - charging only difference of R$ {}", difference);
+
+            walletPort.debitAmount(user.getId(), difference,
+                    String.format("Upgrade de plano: %s para %s (diferença)",
+                            oldPlan.getDescription(), newPlan.getDescription()));
+
+        } else if (priceComparison < 0) {
+            // Downgrade: novo plano é mais barato - estornar a diferença
+            BigDecimal difference = oldPrice.subtract(newPrice);
+            log.info("Plan downgrade detected - refunding difference of R$ {}", difference);
+
+            walletPort.creditRefund(user.getId(), difference,
+                    String.format("Estorno de diferença - Mudança de %s para %s",
+                            oldPlan.getDescription(), newPlan.getDescription()));
+
+        } else {
+            // Mesmo preço - nenhuma transação necessária
+            log.info("Plan change with same price - no financial transaction needed");
+        }
+
+        // Atualizar assinatura existente
+        existingSubscription.setPlan(newPlan);
+        existingSubscription.setStartDate(LocalDate.now());
+        existingSubscription.setExpirationDate(LocalDate.now().plusMonths(1));
+        existingSubscription.setStatus(SubscriptionStatus.ACTIVE);
+        existingSubscription.setUpdatedAt(LocalDateTime.now());
+
+        log.info("Subscription updated for user {} - new plan: {}", user.getId(), newPlan);
+        return subscriptionRepositoryPort.save(existingSubscription);
     }
 }

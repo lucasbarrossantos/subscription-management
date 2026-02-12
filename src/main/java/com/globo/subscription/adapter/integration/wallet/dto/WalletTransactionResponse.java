@@ -1,7 +1,7 @@
 package com.globo.subscription.adapter.integration.wallet.dto;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import lombok.AllArgsConstructor;
@@ -20,5 +20,5 @@ public class WalletTransactionResponse {
     private String type;
     private BigDecimal amount;
     private String description;
-    private OffsetDateTime createdAt;
+    private LocalDateTime createdAt;
 }

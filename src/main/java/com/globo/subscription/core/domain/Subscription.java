@@ -1,6 +1,7 @@
 package com.globo.subscription.core.domain;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import com.globo.subscription.core.domain.enums.SubscriptionStatus;
@@ -22,5 +23,6 @@ public class Subscription {
     private TypePlan plan;
     private LocalDate startDate;
     private LocalDate expirationDate;
+    private LocalDateTime updatedAt;
     private SubscriptionStatus status;
 }

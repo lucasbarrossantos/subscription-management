@@ -13,8 +13,9 @@ CREATE TABLE subscriptions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
     plan VARCHAR(50) NOT NULL,
-    start_date DATE NOT NULL,
+    start_date DATE NOT NULL DEFAULT CURRENT_DATE,
     expiration_date DATE,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status VARCHAR(50) NOT NULL,
     CONSTRAINT fk_subscriptions_user FOREIGN KEY (user_id) REFERENCES users(id)
 );
