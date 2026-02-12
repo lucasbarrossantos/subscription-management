@@ -18,3 +18,8 @@ CREATE TABLE subscriptions (
     status VARCHAR(50) NOT NULL,
     CONSTRAINT fk_subscriptions_user FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
+CREATE INDEX idx_user_id ON users(id);
+CREATE INDEX idx_subscription_id ON subscriptions(id);
+CREATE INDEX idx_subscription_user_id ON subscriptions(user_id);
+CREATE INDEX idx_subscription_plan ON subscriptions(plan);
