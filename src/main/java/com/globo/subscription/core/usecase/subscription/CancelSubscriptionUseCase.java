@@ -21,10 +21,10 @@ public class CancelSubscriptionUseCase implements CancelSubscriptionPort {
     @Override
     public void execute(UUID subscriptionId) {
         Subscription subscription = subscriptionRepositoryPort.findById(subscriptionId)
-                .orElseThrow(() -> new SubscriptionNotFoundException("Subscription not found with id: " + subscriptionId));
+                .orElseThrow(() -> new SubscriptionNotFoundException("Assinatura não encontrada com id: " + subscriptionId));
 
         if (SubscriptionStatus.CANCELED.equals(subscription.getStatus())) {
-            throw new SubscriptionAlreadyCanceledException("Subscription " + subscriptionId + " is already canceled");
+            throw new SubscriptionAlreadyCanceledException("Assinatura " + subscriptionId + " já foi cancelada.");
         }
 
         subscription.setStatus(SubscriptionStatus.CANCELED);

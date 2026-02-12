@@ -25,6 +25,7 @@ import com.globo.subscription.core.exception.EmailAlreadyExistsException;
 import com.globo.subscription.core.exception.SubscriptionAlreadyCanceledException;
 import com.globo.subscription.core.exception.SubscriptionNotFoundException;
 import com.globo.subscription.core.exception.UserNotFoundException;
+import com.globo.subscription.core.exception.WalletTransactionException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -169,6 +170,19 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<Object> handleUserNotFound(UserNotFoundException ex, WebRequest request) {
         HttpStatus status = HttpStatus.NOT_FOUND;
         ProblemType problemType = ProblemType.USER_NOT_FOUND;
+        String detail = ex.getMessage();
+
+        Problem problem = createProblemBuilder(status, problemType, detail)
+                .userMessage(detail)
+                .build();
+
+        return handleExceptionInternal(ex, problem, new HttpHeaders(), status, request);
+    }
+
+    @ExceptionHandler(WalletTransactionException.class)
+    public ResponseEntity<Object> handleWalletTransaction(WalletTransactionException ex, WebRequest request) {
+        HttpStatus status = HttpStatus.valueOf(422);
+        ProblemType problemType = ProblemType.BUSINESS_ERROR;
         String detail = ex.getMessage();
 
         Problem problem = createProblemBuilder(status, problemType, detail)
