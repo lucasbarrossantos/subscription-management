@@ -25,4 +25,5 @@ public class Subscription {
     private LocalDate expirationDate;
     private LocalDateTime updatedAt;
     private SubscriptionStatus status;
+    private Integer renewalAttempts;
 }

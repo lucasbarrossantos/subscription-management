@@ -53,6 +53,7 @@ public class CreateSubscriptionUseCase implements CreateSubscriptionPort {
         subscription.setExpirationDate(LocalDate.now().plusMonths(1));
         subscription.setUpdatedAt(LocalDateTime.now());
         subscription.setStatus(SubscriptionStatus.ACTIVE);
+        subscription.setRenewalAttempts(0);
 
         log.info("New subscription created for user {} - plan: {}", user.getId(), subscription.getPlan());
         return subscriptionRepositoryPort.save(subscription);
@@ -97,6 +98,7 @@ public class CreateSubscriptionUseCase implements CreateSubscriptionPort {
         existingSubscription.setExpirationDate(LocalDate.now().plusMonths(1));
         existingSubscription.setStatus(SubscriptionStatus.ACTIVE);
         existingSubscription.setUpdatedAt(LocalDateTime.now());
+        existingSubscription.setRenewalAttempts(0);
 
         log.info("Subscription updated for user {} - new plan: {}", user.getId(), newPlan);
         return subscriptionRepositoryPort.save(existingSubscription);

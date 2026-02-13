@@ -39,4 +39,7 @@ public class SubscriptionEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private SubscriptionStatus status;
+
+    @Column(nullable = false)
+    private Integer renewalAttempts = 0;
 }

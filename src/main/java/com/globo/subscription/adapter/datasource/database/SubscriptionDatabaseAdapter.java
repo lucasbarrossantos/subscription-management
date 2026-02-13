@@ -1,8 +1,12 @@
 package com.globo.subscription.adapter.datasource.database;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 import com.globo.subscription.adapter.datasource.database.entity.SubscriptionEntity;
@@ -44,5 +48,13 @@ public class SubscriptionDatabaseAdapter implements SubscriptionRepositoryPort {
     public Optional<Subscription> findLatestByUserId(UUID userId) {
         return subscriptionRepository.findFirstByUserIdOrderByStartDateDesc(userId)
                 .map(subscriptionMapper::toDomain);
+    }
+
+    @Override
+    public List<Subscription> findSubscriptionsToRenew(LocalDate currentDate, int batchSize) {
+        return subscriptionRepository.findSubscriptionsToRenew(currentDate, PageRequest.of(0, batchSize))
+                .stream()
+                .map(subscriptionMapper::toDomain)
+                .collect(Collectors.toList());
     }
 }

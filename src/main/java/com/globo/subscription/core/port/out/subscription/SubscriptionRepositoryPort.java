@@ -1,5 +1,7 @@
 package com.globo.subscription.core.port.out.subscription;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -10,4 +12,5 @@ public interface SubscriptionRepositoryPort {
     Optional<Subscription> findActiveByUserId(UUID userId);
     Optional<Subscription> findById(UUID id);
     Optional<Subscription> findLatestByUserId(UUID userId);
+    List<Subscription> findSubscriptionsToRenew(LocalDate currentDate, int batchSize);
 }

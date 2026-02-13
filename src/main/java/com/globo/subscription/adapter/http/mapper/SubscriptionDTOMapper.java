@@ -18,6 +18,8 @@ public interface SubscriptionDTOMapper {
     @Mapping(target = "startDate", ignore = true)
     @Mapping(target = "expirationDate", ignore = true)
     @Mapping(target = "status", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "renewalAttempts", ignore = true)
     Subscription toDomain(SubscriptionRequest request);
 
     @Mapping(source = "user.id", target = "usuarioId")
@@ -34,6 +36,7 @@ public interface SubscriptionDTOMapper {
             case ACTIVE -> "ATIVA";
             case INACTIVE -> "INATIVA";
             case CANCELED -> "CANCELADA";
+            case SUSPENDED -> "SUSPENSA";
         };
     }
 }
