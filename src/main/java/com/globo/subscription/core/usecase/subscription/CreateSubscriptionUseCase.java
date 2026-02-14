@@ -9,7 +9,7 @@ import com.globo.subscription.core.exception.UserNotFoundException;
 import com.globo.subscription.core.port.in.subscription.CreateSubscriptionPort;
 import com.globo.subscription.core.port.out.subscription.SubscriptionRepositoryPort;
 import com.globo.subscription.core.port.out.user.UserRepositoryPort;
-import com.globo.subscription.core.port.out.wallet.WalletPort;
+import com.globo.subscription.core.port.out.payment.PaymentPort;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,7 +26,7 @@ public class CreateSubscriptionUseCase implements CreateSubscriptionPort {
 
     private final SubscriptionRepositoryPort subscriptionRepositoryPort;
     private final UserRepositoryPort userRepositoryPort;
-    private final WalletPort walletPort;
+    private final PaymentPort paymentPort;
 
     @Override
     public Subscription execute(Subscription subscription) {
@@ -46,7 +46,7 @@ public class CreateSubscriptionUseCase implements CreateSubscriptionPort {
         }
 
         // Nova assinatura - débito completo
-        walletPort.debitSubscriptionPlan(user.getId(), subscription.getPlan());
+        paymentPort.debitSubscriptionPlan(user.getId(), subscription.getPlan());
 
         subscription.setUser(user);
         subscription.setStartDate(LocalDate.now());
@@ -74,7 +74,7 @@ public class CreateSubscriptionUseCase implements CreateSubscriptionPort {
             BigDecimal difference = newPrice.subtract(oldPrice);
             log.info("Plan upgrade detected - charging only difference of R$ {}", difference);
 
-            walletPort.debitAmount(user.getId(), difference,
+            paymentPort.debitAmount(user.getId(), difference,
                     String.format("Upgrade de plano: %s para %s (diferença)",
                             oldPlan.getDescription(), newPlan.getDescription()));
 
@@ -83,16 +83,14 @@ public class CreateSubscriptionUseCase implements CreateSubscriptionPort {
             BigDecimal difference = oldPrice.subtract(newPrice);
             log.info("Plan downgrade detected - refunding difference of R$ {}", difference);
 
-            walletPort.creditRefund(user.getId(), difference,
+            paymentPort.creditRefund(user.getId(), difference,
                     String.format("Estorno de diferença - Mudança de %s para %s",
                             oldPlan.getDescription(), newPlan.getDescription()));
 
         } else {
-            // Mesmo preço - nenhuma transação necessária
             log.info("Plan change with same price - no financial transaction needed");
         }
 
-        // Atualizar assinatura existente
         existingSubscription.setPlan(newPlan);
         existingSubscription.setStartDate(LocalDate.now());
         existingSubscription.setExpirationDate(LocalDate.now().plusMonths(1));

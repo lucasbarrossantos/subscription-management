@@ -4,7 +4,7 @@ import com.globo.subscription.core.domain.Subscription;
 import com.globo.subscription.core.domain.enums.SubscriptionStatus;
 import com.globo.subscription.core.port.in.subscription.RenewSubscriptionsPort;
 import com.globo.subscription.core.port.out.subscription.SubscriptionRepositoryPort;
-import com.globo.subscription.core.port.out.wallet.WalletPort;
+import com.globo.subscription.core.port.out.payment.PaymentPort;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,7 +23,7 @@ public class RenewSubscriptionsUseCase implements RenewSubscriptionsPort {
     private static final int MAX_RENEWAL_ATTEMPTS = 3;
 
     private final SubscriptionRepositoryPort subscriptionRepositoryPort;
-    private final WalletPort walletPort;
+    private final PaymentPort paymentPort;
 
     @Override
     public List<Subscription> execute() {
@@ -78,7 +78,7 @@ public class RenewSubscriptionsUseCase implements RenewSubscriptionsPort {
                 subscription.getUser().getId(),
                 subscription.getPlan());
 
-        walletPort.debitSubscriptionPlan(subscription.getUser().getId(), subscription.getPlan());
+        paymentPort.debitSubscriptionPlan(subscription.getUser().getId(), subscription.getPlan());
 
         subscription.setStartDate(LocalDate.now());
         subscription.setExpirationDate(LocalDate.now().plusMonths(1));
