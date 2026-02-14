@@ -1,56 +1,6 @@
 spring:
   application:
     name: subscription-management
-  datasource:
-    url: jdbc:postgresql://localhost:5433/subscription_db
-    username: devLocal
-    password: dev@123
-    driver-class-name: org.postgresql.Driver
   docker:
     compose:
       enabled: false
-
-  jpa:
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
-    hibernate:
-      ddl-auto: validate
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-
-  sql:
-    init:
-      mode: never
-
-  kafka:
-    bootstrap-servers: localhost:9092
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-      acks: all
-      retries: 3
-      properties:
-        spring.json.add.type.headers: false
-    consumer:
-      group-id: subscription-management-group
-      auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: '*'
-
-server:
-  port: 8080
-  servlet:
-    context-path: /api
-
-kafka:
-  topics:
-    payment-debit-subscription-plan: payment-debit-subscription-plan
-    payment-debit-amount: payment-debit-amount
-    payment-credit-refund: payment-credit-refund
-
-logging:
-  level:
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

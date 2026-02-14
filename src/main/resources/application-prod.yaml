@@ -1,0 +1,49 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://<PROD_HOST>:5432/subscription_db
+    username: <PROD_USER>
+    password: <PROD_PASS>
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  sql:
+    init:
+      mode: never
+  kafka:
+    bootstrap-servers: <KAFKA_PROD_BROKER>:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+      properties:
+        spring.json.add.type.headers: false
+    consumer:
+      group-id: subscription-management-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: '*'
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+integrations:
+  wallet:
+    api:
+      url: https://wallet-api.prod/api
+kafka:
+  topics:
+    payment-debit-subscription-plan: payment-debit-subscription-plan-prod
+    payment-debit-amount: payment-debit-amount-prod
+    payment-credit-refund: payment-credit-refund-prod
+logging:
+  level:
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: ERROR
