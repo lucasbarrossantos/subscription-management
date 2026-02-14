@@ -34,6 +34,7 @@ public class CreateSubscriptionUseCase implements CreateSubscriptionPort {
                 .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado com id: " + subscription.getUser().getId()));
 
         if (subscriptionRepositoryPort.findActiveByUserId(user.getId()).isPresent()) {
+            log.error("User {} already has an active subscription", user.getId());
             throw new ActiveSubscriptionAlreadyExistsException("Usuário " + user.getId() + " já possui uma assinatura ativa.");
         }
 

@@ -42,6 +42,19 @@ services:
     networks:
       - subscription-network
 
+  otel-lgtm:
+    image: grafana/otel-lgtm
+    container_name: otel-lgtm
+    ports:
+      - "3000:3000"   # Grafana UI
+      - "4318:4318"   # OTLP HTTP receiver
+      - "4317:4317"   # OTLP gRPC receiver
+      - "3100:3100"   # Loki
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - subscription-network
+
 networks:
   subscription-network:
     driver: bridge
