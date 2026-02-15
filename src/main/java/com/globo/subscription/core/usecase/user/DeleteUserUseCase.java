@@ -18,7 +18,7 @@ public class DeleteUserUseCase implements DeleteUserPort {
 
     @Override
     public void execute(UUID id) {
-        if (!userRepositoryPort.findById(id).isPresent()) {
+        if (userRepositoryPort.findById(id).isEmpty()) {
             throw new UserNotFoundException("User not found with id: " + id);
         }
         userRepositoryPort.delete(id);

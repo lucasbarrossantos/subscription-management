@@ -23,7 +23,12 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.contains;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class CreateSubscriptionUseCaseTest {
 
@@ -89,5 +94,108 @@ class CreateSubscriptionUseCaseTest {
         assertNotNull(result);
         verify(paymentPort).debitSubscriptionPlan(any(), any(), any());
         verify(activeSubscriptionCachePort).putActiveSubscription(any(), any(), anyLong());
+    }
+
+    @Test
+    void shouldHandlePlanUpgradeAndChargeDifference() {
+        Subscription oldSub = new Subscription();
+        oldSub.setId(UUID.randomUUID());
+        oldSub.setUser(user);
+        oldSub.setPlan(TypePlan.BASIC);
+        oldSub.setStatus(com.globo.subscription.core.domain.enums.SubscriptionStatus.CANCELED);
+
+        Subscription upgrade = new Subscription();
+        upgrade.setUser(user);
+        upgrade.setPlan(TypePlan.PREMIUM);
+
+        when(userRepositoryPort.findById(any())).thenReturn(Optional.of(user));
+        when(walletPort.existsWallet(any())).thenReturn(true);
+        when(subscriptionRepositoryPort.findActiveByUserId(any())).thenReturn(Optional.empty());
+        when(subscriptionRepositoryPort.findLatestByUserId(any())).thenReturn(Optional.of(oldSub));
+        when(subscriptionRepositoryPort.save(any())).thenReturn(oldSub);
+
+        Subscription result = useCase.execute(upgrade);
+
+        assertNotNull(result);
+        verify(paymentPort).debitAmount(eq(user.getId()), eq(TypePlan.PREMIUM.getPrice().subtract(TypePlan.BASIC.getPrice())), contains("Upgrade de plano"), eq(oldSub.getId()));
+        verify(activeSubscriptionCachePort).putActiveSubscription(eq(user.getId()), eq(oldSub), anyLong());
+    }
+
+    @Test
+    void shouldHandlePlanDowngradeAndRefundDifference() {
+        Subscription oldSub = new Subscription();
+        oldSub.setId(UUID.randomUUID());
+        oldSub.setUser(user);
+        oldSub.setPlan(TypePlan.PREMIUM);
+        oldSub.setStatus(com.globo.subscription.core.domain.enums.SubscriptionStatus.CANCELED);
+
+        Subscription downgrade = new Subscription();
+        downgrade.setUser(user);
+        downgrade.setPlan(TypePlan.BASIC);
+
+        when(userRepositoryPort.findById(any())).thenReturn(Optional.of(user));
+        when(walletPort.existsWallet(any())).thenReturn(true);
+        when(subscriptionRepositoryPort.findActiveByUserId(any())).thenReturn(Optional.empty());
+        when(subscriptionRepositoryPort.findLatestByUserId(any())).thenReturn(Optional.of(oldSub));
+        when(subscriptionRepositoryPort.save(any())).thenReturn(oldSub);
+
+        Subscription result = useCase.execute(downgrade);
+
+        assertNotNull(result);
+        verify(paymentPort).creditRefund(eq(user.getId()), eq(TypePlan.PREMIUM.getPrice().subtract(TypePlan.BASIC.getPrice())), contains("Estorno de diferença"), eq(oldSub.getId()));
+        verify(paymentPort).debitAmount(eq(user.getId()), eq(TypePlan.BASIC.getPrice()), contains("Cobrança do novo plano"), eq(oldSub.getId()));
+        verify(activeSubscriptionCachePort).putActiveSubscription(eq(user.getId()), eq(oldSub), anyLong());
+    }
+
+    @Test
+    void shouldHandleReactivationWithoutFinancialTransaction() {
+        Subscription oldSub = new Subscription();
+        oldSub.setId(UUID.randomUUID());
+        oldSub.setUser(user);
+        oldSub.setPlan(TypePlan.BASIC);
+        oldSub.setStatus(com.globo.subscription.core.domain.enums.SubscriptionStatus.CANCELED);
+
+        Subscription reactivation = new Subscription();
+        reactivation.setUser(user);
+        reactivation.setPlan(TypePlan.BASIC);
+
+        when(userRepositoryPort.findById(any())).thenReturn(Optional.of(user));
+        when(walletPort.existsWallet(any())).thenReturn(true);
+        when(subscriptionRepositoryPort.findActiveByUserId(any())).thenReturn(Optional.empty());
+        when(subscriptionRepositoryPort.findLatestByUserId(any())).thenReturn(Optional.of(oldSub));
+        when(subscriptionRepositoryPort.save(any())).thenReturn(oldSub);
+
+        Subscription result = useCase.execute(reactivation);
+
+        assertNotNull(result);
+        verify(paymentPort, never()).debitAmount(any(), any(), any(), any());
+        verify(paymentPort, never()).creditRefund(any(), any(), any(), any());
+        verify(activeSubscriptionCachePort).putActiveSubscription(eq(user.getId()), eq(oldSub), anyLong());
+    }
+
+    @Test
+    void shouldHandlePlanChangeWithSamePrice() {
+        Subscription oldSub = new Subscription();
+        oldSub.setId(UUID.randomUUID());
+        oldSub.setUser(user);
+        oldSub.setPlan(TypePlan.PREMIUM);
+        oldSub.setStatus(com.globo.subscription.core.domain.enums.SubscriptionStatus.CANCELED);
+
+        Subscription samePrice = new Subscription();
+        samePrice.setUser(user);
+        samePrice.setPlan(TypePlan.PREMIUM);
+
+        when(userRepositoryPort.findById(any())).thenReturn(Optional.of(user));
+        when(walletPort.existsWallet(any())).thenReturn(true);
+        when(subscriptionRepositoryPort.findActiveByUserId(any())).thenReturn(Optional.empty());
+        when(subscriptionRepositoryPort.findLatestByUserId(any())).thenReturn(Optional.of(oldSub));
+        when(subscriptionRepositoryPort.save(any())).thenReturn(oldSub);
+
+        Subscription result = useCase.execute(samePrice);
+
+        assertNotNull(result);
+        verify(paymentPort, never()).debitAmount(any(), any(), any(), any());
+        verify(paymentPort, never()).creditRefund(any(), any(), any(), any());
+        verify(activeSubscriptionCachePort).putActiveSubscription(eq(user.getId()), eq(oldSub), anyLong());
     }
 }

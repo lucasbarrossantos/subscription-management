@@ -89,24 +89,31 @@ public class CreateSubscriptionUseCase implements CreateSubscriptionPort {
         boolean isReactivation = priceComparison == 0 && oldPlan.equals(newPlan);
 
         if (isUpgrade) {
+
             BigDecimal difference = newPrice.subtract(oldPrice);
             log.info("Plan upgrade detected - charging only difference of R$ {}", difference);
             existingSubscription.setStatus(SubscriptionStatus.PENDING);
+
             paymentPort.debitAmount(user.getId(), difference,
                     String.format("Upgrade de plano: %s para %s (diferença)",
                             oldPlan.getDescription(), newPlan.getDescription()),
                     existingSubscription.getId());
+
         } else if (isDowngrade) {
+
             BigDecimal difference = oldPrice.subtract(newPrice);
             log.info("Plan downgrade detected - refunding difference of R$ {}", difference);
             existingSubscription.setStatus(SubscriptionStatus.PENDING);
+
             paymentPort.creditRefund(user.getId(), difference,
                     String.format("Estorno de diferença - Mudança de %s para %s",
                             oldPlan.getDescription(), newPlan.getDescription()),
                     existingSubscription.getId());
+
             paymentPort.debitAmount(user.getId(), newPrice,
                     String.format("Cobrança do novo plano após downgrade: %s", newPlan.getDescription()),
                     existingSubscription.getId());
+
         } else if (isReactivation) {
             log.info("Reactivation detected - no financial transaction needed");
             existingSubscription.setStatus(SubscriptionStatus.ACTIVE);
