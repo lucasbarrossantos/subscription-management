@@ -16,4 +16,5 @@ public class DebitAmountEvent {
     private UUID userId;
     private BigDecimal amount;
     private String description;
+    private UUID subscriptionId;
 }

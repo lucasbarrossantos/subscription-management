@@ -36,7 +36,7 @@ public class PaymentKafkaAdapter implements PaymentPort {
     }
 
     @Override
-    public void debitAmount(UUID userId, BigDecimal amount, String description) {
+    public void debitAmount(UUID userId, BigDecimal amount, String description, UUID subscriptionId) {
         log.info("Publishing debit amount event - userId: {}, amount: {}, description: {}",
                 userId, amount, description);
 
@@ -44,6 +44,7 @@ public class PaymentKafkaAdapter implements PaymentPort {
                 .userId(userId)
                 .amount(amount)
                 .description(description)
+                .subscriptionId(subscriptionId)
                 .build();
 
         paymentEventProducer.sendDebitAmountEvent(event);
@@ -52,7 +53,7 @@ public class PaymentKafkaAdapter implements PaymentPort {
     }
 
     @Override
-    public void creditRefund(UUID userId, BigDecimal amount, String description) {
+    public void creditRefund(UUID userId, BigDecimal amount, String description, UUID subscriptionId) {
         log.info("Publishing credit refund event - userId: {}, amount: {}, description: {}",
                 userId, amount, description);
 
@@ -60,10 +61,10 @@ public class PaymentKafkaAdapter implements PaymentPort {
                 .userId(userId)
                 .amount(amount)
                 .description(description)
+                .subscriptionId(subscriptionId)
                 .build();
 
         paymentEventProducer.sendCreditRefundEvent(event);
-
         log.info("Credit refund event published - userId: {}, amount: {}", userId, amount);
     }
 }

@@ -9,7 +9,7 @@ public interface PaymentPort {
 
     void debitSubscriptionPlan(UUID userId, TypePlan plan, UUID subscriptionId);
 
-    void debitAmount(UUID userId, BigDecimal amount, String description);
+    void debitAmount(UUID userId, BigDecimal amount, String description, UUID subscriptionId);
 
-    void creditRefund(UUID userId, BigDecimal amount, String description);
+    void creditRefund(UUID userId, BigDecimal amount, String description, UUID subscriptionId);
 }

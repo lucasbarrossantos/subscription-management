@@ -30,15 +30,13 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: '*'
-integrations:
-  wallet:
-    api:
-      url: http://localhost:8081/api
+
 kafka:
   topics:
     payment-debit-subscription-plan: payment-debit-subscription-plan-dev
     payment-debit-amount: payment-debit-amount-dev
     payment-credit-refund: payment-credit-refund-dev
+
 logging:
   level:
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
@@ -49,3 +47,7 @@ redis:
   timeout: 2000
   cache:
     active-subscription-ttl-seconds: 3600 # 1 hora
+
+integrations:
+  wallet:
+    url: http://localhost:8081/wallet-service/api
