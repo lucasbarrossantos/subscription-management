@@ -24,9 +24,11 @@ class TraceIdFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String traceId = getTraceId();
+
         if (traceId != null) {
             response.setHeader("X-Trace-Id", traceId);
         }
+
         filterChain.doFilter(request, response);
     }
 
@@ -34,5 +36,4 @@ class TraceIdFilter extends OncePerRequestFilter {
         TraceContext context = this.tracer.currentTraceContext().context();
         return context != null ? context.traceId() : null;
     }
-
 }

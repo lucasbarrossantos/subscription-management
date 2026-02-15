@@ -2,6 +2,7 @@ package com.globo.subscription.core.usecase.subscription;
 
 import java.util.UUID;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import com.globo.subscription.core.domain.Subscription;
@@ -10,13 +11,16 @@ import com.globo.subscription.core.exception.SubscriptionAlreadyCanceledExceptio
 import com.globo.subscription.core.exception.SubscriptionNotFoundException;
 import com.globo.subscription.core.port.in.subscription.CancelSubscriptionPort;
 import com.globo.subscription.core.port.out.subscription.SubscriptionRepositoryPort;
+import com.globo.subscription.core.port.out.subscription.ActiveSubscriptionCachePort;
 import lombok.AllArgsConstructor;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class CancelSubscriptionUseCase implements CancelSubscriptionPort {
 
     private final SubscriptionRepositoryPort subscriptionRepositoryPort;
+    private final ActiveSubscriptionCachePort activeSubscriptionCachePort;
 
     @Override
     public void execute(UUID subscriptionId) {
@@ -28,6 +32,8 @@ public class CancelSubscriptionUseCase implements CancelSubscriptionPort {
         }
 
         subscription.setStatus(SubscriptionStatus.CANCELED);
-        subscriptionRepositoryPort.save(subscription);
+        subscription = subscriptionRepositoryPort.save(subscription);
+        activeSubscriptionCachePort.removeActiveSubscription(subscription.getUser().getId());
+        log.info("Assinatura id: {} do cliente: {} foi cancelada com sucesso.", subscriptionId, subscription.getUser().getId());
     }
 }

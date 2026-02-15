@@ -10,9 +10,11 @@ import com.globo.subscription.core.port.in.subscription.CreateSubscriptionPort;
 import com.globo.subscription.core.port.out.subscription.SubscriptionRepositoryPort;
 import com.globo.subscription.core.port.out.user.UserRepositoryPort;
 import com.globo.subscription.core.port.out.payment.PaymentPort;
-import lombok.AllArgsConstructor;
+import com.globo.subscription.core.port.out.subscription.ActiveSubscriptionCachePort;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -21,12 +23,16 @@ import java.util.Optional;
 
 @Slf4j
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class CreateSubscriptionUseCase implements CreateSubscriptionPort {
+
+    @Value("${redis.cache.active-subscription-ttl-seconds:3600}")
+    private long ttlSeconds;
 
     private final SubscriptionRepositoryPort subscriptionRepositoryPort;
     private final UserRepositoryPort userRepositoryPort;
     private final PaymentPort paymentPort;
+    private final ActiveSubscriptionCachePort activeSubscriptionCachePort;
 
     @Override
     public Subscription execute(Subscription subscription) {
@@ -42,22 +48,23 @@ public class CreateSubscriptionUseCase implements CreateSubscriptionPort {
 
         if (latestSubscription.isPresent() &&
                 SubscriptionStatus.CANCELED.equals(latestSubscription.get().getStatus())) {
-
-            return handlePlanChange(latestSubscription.get(), subscription.getPlan(), user);
+            Subscription created = handlePlanChange(latestSubscription.get(), subscription.getPlan(), user);
+            activeSubscriptionCachePort.putActiveSubscription(user.getId(), created, ttlSeconds);
+            return created;
         }
-
-        // Nova assinatura - débito completo
-        paymentPort.debitSubscriptionPlan(user.getId(), subscription.getPlan());
 
         subscription.setUser(user);
         subscription.setStartDate(LocalDate.now());
         subscription.setExpirationDate(LocalDate.now().plusMonths(1));
         subscription.setUpdatedAt(LocalDateTime.now());
-        subscription.setStatus(SubscriptionStatus.ACTIVE);
+        subscription.setStatus(SubscriptionStatus.PENDING);
         subscription.setRenewalAttempts(0);
 
         log.info("New subscription created for user {} - plan: {}", user.getId(), subscription.getPlan());
-        return subscriptionRepositoryPort.save(subscription);
+        Subscription created = subscriptionRepositoryPort.save(subscription);
+        paymentPort.debitSubscriptionPlan(user.getId(), subscription.getPlan(), created.getId());
+        activeSubscriptionCachePort.putActiveSubscription(user.getId(), created, ttlSeconds);
+        return created;
     }
 
     private Subscription handlePlanChange(Subscription existingSubscription, TypePlan newPlan, User user) {
@@ -95,7 +102,7 @@ public class CreateSubscriptionUseCase implements CreateSubscriptionPort {
         existingSubscription.setPlan(newPlan);
         existingSubscription.setStartDate(LocalDate.now());
         existingSubscription.setExpirationDate(LocalDate.now().plusMonths(1));
-        existingSubscription.setStatus(SubscriptionStatus.ACTIVE);
+        existingSubscription.setStatus(SubscriptionStatus.PENDING);
         existingSubscription.setUpdatedAt(LocalDateTime.now());
         existingSubscription.setRenewalAttempts(0);
 

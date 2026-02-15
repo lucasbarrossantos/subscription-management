@@ -37,6 +37,8 @@ public interface SubscriptionDTOMapper {
             case INACTIVE -> "INATIVA";
             case CANCELED -> "CANCELADA";
             case SUSPENDED -> "SUSPENSA";
+            case PENDING -> "PENDENTE";
+            case PAYMENT_FAILED -> "FALHA_PAGAMENTO";
         };
     }
 }

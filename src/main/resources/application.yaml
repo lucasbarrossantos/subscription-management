@@ -5,6 +5,11 @@ spring:
     compose:
       enabled: false
 
+server:
+  port: 8080
+  servlet:
+    context-path: /subscription-management/api
+
 management:
   opentelemetry:
     tracing:

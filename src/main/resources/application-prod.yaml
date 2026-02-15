@@ -30,10 +30,6 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: '*'
-server:
-  port: 8080
-  servlet:
-    context-path: /api
 integrations:
   wallet:
     api:
@@ -47,3 +43,9 @@ logging:
   level:
     org.hibernate.SQL: WARN
     org.hibernate.type.descriptor.sql.BasicBinder: ERROR
+redis:
+  host: <REDIS_PROD_HOST>
+  port: 6379
+  timeout: 2000
+  cache:
+    active-subscription-ttl-seconds: 3600 # 1 hora

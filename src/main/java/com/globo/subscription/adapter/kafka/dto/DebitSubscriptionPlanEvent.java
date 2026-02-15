@@ -16,4 +16,5 @@ public class DebitSubscriptionPlanEvent {
     private UUID userId;
     private TypePlan plan;
     private String description;
+    private UUID subscriptionId;
 }

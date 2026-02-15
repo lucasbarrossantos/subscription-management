@@ -27,7 +27,6 @@ public class RenewSubscriptionsUseCase implements RenewSubscriptionsPort {
 
     @Override
     public List<Subscription> execute() {
-        log.info("Starting subscription renewal process");
 
         LocalDate currentDate = LocalDate.now();
         List<Subscription> subscriptionsToRenew = subscriptionRepositoryPort.findSubscriptionsToRenew(currentDate, BATCH_SIZE);
@@ -78,7 +77,7 @@ public class RenewSubscriptionsUseCase implements RenewSubscriptionsPort {
                 subscription.getUser().getId(),
                 subscription.getPlan());
 
-        paymentPort.debitSubscriptionPlan(subscription.getUser().getId(), subscription.getPlan());
+        paymentPort.debitSubscriptionPlan(subscription.getUser().getId(), subscription.getPlan(), subscription.getId());
 
         subscription.setStartDate(LocalDate.now());
         subscription.setExpirationDate(LocalDate.now().plusMonths(1));

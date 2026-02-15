@@ -25,7 +25,7 @@ public class SubscriptionRenewalController {
 
     @PostMapping
     public ResponseEntity<SubscriptionRenewalResponse> renewal() {
-        log.info("Received request to process subscription renewals");
+        log.info("Starting subscription renewal process");
 
         List<Subscription> renewedSubscriptions = renewSubscriptionsPort.execute();
 
@@ -40,7 +40,6 @@ public class SubscriptionRenewalController {
         );
 
         log.info("Renewal process completed - {} subscriptions renewed", renewedSubscriptions.size());
-
         return ResponseEntity.ok(response);
     }
 }

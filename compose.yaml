@@ -55,6 +55,19 @@ services:
     networks:
       - subscription-network
 
+  redis:
+    image: redis:7.2-alpine
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
 networks:
   subscription-network:
     driver: bridge
+
+volumes:
+  redis_data:
+    driver: local

@@ -7,7 +7,7 @@ import java.util.UUID;
 
 public interface PaymentPort {
 
-    void debitSubscriptionPlan(UUID userId, TypePlan plan);
+    void debitSubscriptionPlan(UUID userId, TypePlan plan, UUID subscriptionId);
 
     void debitAmount(UUID userId, BigDecimal amount, String description);
 

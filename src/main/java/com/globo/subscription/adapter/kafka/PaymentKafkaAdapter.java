@@ -21,18 +21,18 @@ public class PaymentKafkaAdapter implements PaymentPort {
     private final PaymentEventProducer paymentEventProducer;
 
     @Override
-    public void debitSubscriptionPlan(UUID userId, TypePlan plan) {
-        log.info("Publishing debit subscription plan event - userId: {}, plan: {}", userId, plan);
+    public void debitSubscriptionPlan(UUID userId, TypePlan plan, UUID subscriptionId) {
+        log.info("Publishing debit subscription plan event - userId: {}, plan: {}, subscriptionId: {}", userId, plan, subscriptionId);
 
         DebitSubscriptionPlanEvent event = DebitSubscriptionPlanEvent.builder()
                 .userId(userId)
                 .plan(plan)
                 .description("Compra de " + plan.getDescription())
+                .subscriptionId(subscriptionId)
                 .build();
 
         paymentEventProducer.sendDebitSubscriptionPlanEvent(event);
-
-        log.info("Debit subscription plan event published - userId: {}, plan: {}", userId, plan);
+        log.info("Debit subscription plan event published - userId: {}, plan: {}, subscriptionId: {}", userId, plan, subscriptionId);
     }
 
     @Override
