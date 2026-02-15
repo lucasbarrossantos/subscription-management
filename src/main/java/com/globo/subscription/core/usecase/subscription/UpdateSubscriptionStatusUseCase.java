@@ -1,6 +1,7 @@
 package com.globo.subscription.core.usecase.subscription;
 
 import com.globo.subscription.core.domain.enums.SubscriptionStatus;
+import com.globo.subscription.core.exception.SubscriptionAlreadyUpdatedException;
 import com.globo.subscription.core.exception.SubscriptionNotFoundException;
 import com.globo.subscription.core.port.in.subscription.UpdateSubscriptionStatusPort;
 import com.globo.subscription.core.port.out.subscription.ActiveSubscriptionCachePort;
@@ -32,7 +33,7 @@ public class UpdateSubscriptionStatusUseCase implements UpdateSubscriptionStatus
 
         if (subscription.getStatus() == newStatus) {
             log.info("Status da assinatura {} já é {}", subscriptionId, newStatus);
-            return;
+            throw new SubscriptionAlreadyUpdatedException("Status da assinatura " + subscriptionId + " já é " + newStatus);
         }
 
         subscription.setStatus(newStatus);

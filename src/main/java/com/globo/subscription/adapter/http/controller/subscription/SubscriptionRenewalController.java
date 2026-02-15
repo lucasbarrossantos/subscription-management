@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.globo.subscription.adapter.http.controller.subscription.spec.SubscriptionRenewalControllerSpec;
 
 import java.util.List;
 
@@ -18,11 +19,12 @@ import java.util.List;
 @RestController
 @RequestMapping("/subscriptions/renewal")
 @AllArgsConstructor
-public class SubscriptionRenewalController {
+public class SubscriptionRenewalController implements SubscriptionRenewalControllerSpec {
 
     private final RenewSubscriptionsPort renewSubscriptionsPort;
     private final SubscriptionDTOMapper subscriptionDTOMapper;
 
+    @Override
     @PostMapping
     public ResponseEntity<SubscriptionRenewalResponse> renewal() {
         log.info("Starting subscription renewal process");

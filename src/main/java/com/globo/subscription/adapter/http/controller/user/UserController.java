@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import com.globo.subscription.adapter.http.controller.user.spec.UserControllerSpec;
 
 import com.globo.subscription.adapter.http.dto.PagedResponse;
 import com.globo.subscription.adapter.http.dto.user.UserRequest;
@@ -34,7 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @AllArgsConstructor
 @RequestMapping("/users")
-public class UserController {
+public class UserController implements UserControllerSpec {
 
     private final CreateUserPort createUserPort;
     private final GetAllUsersPort getAllUsersPort;

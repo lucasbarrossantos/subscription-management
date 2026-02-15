@@ -23,6 +23,7 @@ import com.globo.subscription.core.exception.ActiveSubscriptionAlreadyExistsExce
 import com.globo.subscription.core.exception.BusinessException;
 import com.globo.subscription.core.exception.EmailAlreadyExistsException;
 import com.globo.subscription.core.exception.SubscriptionAlreadyCanceledException;
+import com.globo.subscription.core.exception.SubscriptionAlreadyUpdatedException;
 import com.globo.subscription.core.exception.SubscriptionNotFoundException;
 import com.globo.subscription.core.exception.UserNotFoundException;
 import com.globo.subscription.core.exception.WalletTransactionException;
@@ -41,6 +42,19 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<Object> handleSubscriptionNotFound(SubscriptionNotFoundException ex, WebRequest request) {
         HttpStatus status = HttpStatus.NOT_FOUND;
         ProblemType problemType = ProblemType.REGISTER_NOT_FOUND;
+        String detail = ex.getMessage();
+
+        Problem problem = createProblemBuilder(status, problemType, detail)
+                .userMessage(detail)
+                .build();
+
+        return handleExceptionInternal(ex, problem, new HttpHeaders(), status, request);
+    }
+
+    @ExceptionHandler(SubscriptionAlreadyUpdatedException.class)
+    public ResponseEntity<Object> handleSubscriptionAlreadyUpdated(SubscriptionAlreadyUpdatedException ex, WebRequest request) {
+        HttpStatus status = HttpStatus.CONFLICT;
+        ProblemType problemType = ProblemType.BUSINESS_ERROR;
         String detail = ex.getMessage();
 
         Problem problem = createProblemBuilder(status, problemType, detail)

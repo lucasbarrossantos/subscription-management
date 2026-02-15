@@ -1,5 +1,5 @@
 services:
-  postgres:
+  subscription_db:
     image: 'postgres:latest'
     container_name: subscription_db
     environment:
@@ -63,6 +63,42 @@ services:
     volumes:
       - redis_data:/data
     restart: unless-stopped
+    networks:
+      - subscription-network
+
+  scheduler-db:
+    image: postgres:15-alpine
+    container_name: scheduler-db
+    environment:
+      - POSTGRES_DB=scheduler_db
+      - POSTGRES_USER=devLocal
+      - POSTGRES_PASSWORD=dev@123
+    ports:
+      - "5435:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devLocal -d scheduler_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - subscription-network
+
+  wallet-db:
+    image: postgres:15-alpine
+    container_name: wallet-db
+    environment:
+      - POSTGRES_DB=wallet_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d wallet_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - subscription-network
 
 networks:
   subscription-network:

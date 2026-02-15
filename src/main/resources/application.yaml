@@ -10,6 +10,13 @@ server:
   servlet:
     context-path: /subscription-management/api
 
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+
 management:
   opentelemetry:
     tracing:

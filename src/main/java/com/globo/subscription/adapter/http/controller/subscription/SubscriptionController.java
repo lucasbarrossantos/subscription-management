@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.globo.subscription.adapter.http.controller.subscription.spec.SubscriptionControllerSpec;
 import com.globo.subscription.adapter.http.dto.subscription.SubscriptionRequest;
 import com.globo.subscription.adapter.http.dto.subscription.SubscriptionResponse;
 import com.globo.subscription.adapter.http.dto.subscription.UpdateSubscriptionStatusRequest;
@@ -29,13 +30,14 @@ import lombok.AllArgsConstructor;
 @RestController
 @RequestMapping("/subscriptions")
 @AllArgsConstructor
-public class SubscriptionController {
+public class SubscriptionController implements SubscriptionControllerSpec {
 
     private final CreateSubscriptionPort createSubscriptionPort;
     private final CancelSubscriptionPort cancelSubscriptionPort;
     private final UpdateSubscriptionStatusPort updateSubscriptionStatusPort;
     private final SubscriptionDTOMapper subscriptionDTOMapper;
 
+    @Override
     @PostMapping
     public ResponseEntity<SubscriptionResponse> create(@Valid @RequestBody SubscriptionRequest request) {
         Subscription subscription = subscriptionDTOMapper.toDomain(request);
@@ -50,12 +52,14 @@ public class SubscriptionController {
         return ResponseEntity.created(uri).body(response);
     }
 
+    @Override
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> cancel(@PathVariable UUID id) {
         cancelSubscriptionPort.execute(id);
         return ResponseEntity.noContent().build();
     }
 
+    @Override
     @PutMapping("/status")
     public ResponseEntity<Void> updateStatus(@Valid @RequestBody UpdateSubscriptionStatusRequest request) {
         updateSubscriptionStatusPort.execute(request.subscriptionId(), request.status());
