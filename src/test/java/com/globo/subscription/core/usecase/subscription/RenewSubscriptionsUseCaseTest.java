@@ -54,12 +54,17 @@ class RenewSubscriptionsUseCaseTest {
         List<Subscription> toRenew = List.of(subscription);
         when(subscriptionRepositoryPort.findSubscriptionsToRenew(any(LocalDate.class), anyInt())).thenReturn(toRenew);
         when(subscriptionRepositoryPort.save(any())).thenReturn(subscription);
-        doNothing().when(paymentPort).debitSubscriptionPlan(any(), any(), any());
+        doNothing().when(paymentPort).debitAmount(any(), any(), any(), any());
 
         List<Subscription> renewed = useCase.execute();
 
         assertThat(renewed).containsExactly(subscription);
-        verify(paymentPort).debitSubscriptionPlan(eq(user.getId()), eq(TypePlan.BASIC), eq(subscription.getId()));
+        verify(paymentPort).debitAmount(
+                eq(user.getId()), 
+                eq(TypePlan.BASIC.getPrice()), 
+                eq("Renovação de " + TypePlan.BASIC.getDescription()), 
+                eq(subscription.getId())
+        );
         verify(subscriptionRepositoryPort).save(any());
     }
 
@@ -67,7 +72,7 @@ class RenewSubscriptionsUseCaseTest {
     void execute_shouldHandlePaymentFailureAndIncrementAttempts() {
         List<Subscription> toRenew = List.of(subscription);
         when(subscriptionRepositoryPort.findSubscriptionsToRenew(any(LocalDate.class), anyInt())).thenReturn(toRenew);
-        doThrow(new RuntimeException("Payment failed")).when(paymentPort).debitSubscriptionPlan(any(), any(), any());
+        doThrow(new RuntimeException("Payment failed")).when(paymentPort).debitAmount(any(), any(), any(), any());
         when(subscriptionRepositoryPort.save(any())).thenReturn(subscription);
 
         List<Subscription> renewed = useCase.execute();
@@ -84,7 +89,7 @@ class RenewSubscriptionsUseCaseTest {
         subscription.setRenewalAttempts(2);
         List<Subscription> toRenew = List.of(subscription);
         when(subscriptionRepositoryPort.findSubscriptionsToRenew(any(LocalDate.class), anyInt())).thenReturn(toRenew);
-        doThrow(new RuntimeException("Payment failed")).when(paymentPort).debitSubscriptionPlan(any(), any(), any());
+        doThrow(new RuntimeException("Payment failed")).when(paymentPort).debitAmount(any(), any(), any(), any());
         when(subscriptionRepositoryPort.save(any())).thenReturn(subscription);
 
         useCase.execute();
@@ -107,14 +112,34 @@ class RenewSubscriptionsUseCaseTest {
         List<Subscription> toRenew = List.of(subscription, sub2);
         when(subscriptionRepositoryPort.findSubscriptionsToRenew(any(LocalDate.class), anyInt())).thenReturn(toRenew);
         when(subscriptionRepositoryPort.save(any())).thenReturn(subscription, sub2);
-        doNothing().when(paymentPort).debitSubscriptionPlan(eq(user.getId()), eq(TypePlan.BASIC), eq(subscription.getId()));
-        doThrow(new RuntimeException("Payment failed")).when(paymentPort).debitSubscriptionPlan(eq(user.getId()), eq(TypePlan.PREMIUM), eq(sub2.getId()));
+        doNothing().when(paymentPort).debitAmount(
+                eq(user.getId()), 
+                eq(TypePlan.BASIC.getPrice()), 
+                eq("Renovação de " + TypePlan.BASIC.getDescription()), 
+                eq(subscription.getId())
+        );
+        doThrow(new RuntimeException("Payment failed")).when(paymentPort).debitAmount(
+                eq(user.getId()), 
+                eq(TypePlan.PREMIUM.getPrice()), 
+                eq("Renovação de " + TypePlan.PREMIUM.getDescription()), 
+                eq(sub2.getId())
+        );
 
         List<Subscription> renewed = useCase.execute();
 
         assertThat(renewed).containsExactly(subscription);
-        verify(paymentPort).debitSubscriptionPlan(eq(user.getId()), eq(TypePlan.BASIC), eq(subscription.getId()));
-        verify(paymentPort).debitSubscriptionPlan(eq(user.getId()), eq(TypePlan.PREMIUM), eq(sub2.getId()));
+        verify(paymentPort).debitAmount(
+                eq(user.getId()), 
+                eq(TypePlan.BASIC.getPrice()), 
+                eq("Renovação de " + TypePlan.BASIC.getDescription()), 
+                eq(subscription.getId())
+        );
+        verify(paymentPort).debitAmount(
+                eq(user.getId()), 
+                eq(TypePlan.PREMIUM.getPrice()), 
+                eq("Renovação de " + TypePlan.PREMIUM.getDescription()), 
+                eq(sub2.getId())
+        );
         verify(subscriptionRepositoryPort, times(2)).save(any());
     }
 

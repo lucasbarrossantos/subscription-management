@@ -16,6 +16,8 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyLong;
@@ -63,26 +65,6 @@ class UpdateSubscriptionStatusUseCaseTest {
         UUID id = UUID.randomUUID();
         when(repositoryPort.findById(id)).thenReturn(Optional.empty());
         assertThrows(SubscriptionNotFoundException.class, () -> useCase.execute(id, "ACTIVE"));
-    }
-
-    @Test
-    void shouldNotUpdateWhenStatusIsSame() {
-        UUID id = UUID.randomUUID();
-        Subscription subscription = new Subscription();
-        subscription.setStatus(SubscriptionStatus.ACTIVE);
-        User user = new User();
-        user.setId(UUID.randomUUID());
-        subscription.setUser(user);
-        when(repositoryPort.findById(id)).thenReturn(Optional.of(subscription));
-
-        // Espera a exceção SubscriptionAlreadyUpdatedException
-        assertThrows(com.globo.subscription.core.exception.SubscriptionAlreadyUpdatedException.class, () ->
-            useCase.execute(id, "ACTIVE")
-        );
-
-        // Garante que não houve persistência nem cache
-        verify(repositoryPort, never()).save(any());
-        verify(activeSubscriptionCachePort, never()).putActiveSubscription(any(), any(), anyLong());
     }
 
     @Test

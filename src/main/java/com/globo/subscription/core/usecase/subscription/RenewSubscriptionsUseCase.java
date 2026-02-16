@@ -77,13 +77,18 @@ public class RenewSubscriptionsUseCase implements RenewSubscriptionsPort {
                 subscription.getUser().getId(),
                 subscription.getPlan());
 
-        paymentPort.debitSubscriptionPlan(subscription.getUser().getId(), subscription.getPlan(), subscription.getId());
+        paymentPort.debitAmount(
+                subscription.getUser().getId(), 
+                subscription.getPlan().getPrice(), 
+                String.format("Renovação de %s", subscription.getPlan().getDescription()),
+                subscription.getId()
+        );
 
         subscription.setStartDate(LocalDate.now());
         subscription.setExpirationDate(LocalDate.now().plusMonths(1));
         subscription.setUpdatedAt(LocalDateTime.now());
         subscription.setRenewalAttempts(0);
-        subscription.setStatus(SubscriptionStatus.ACTIVE);
+        subscription.setStatus(SubscriptionStatus.PENDING);
 
         return subscriptionRepositoryPort.save(subscription);
     }
