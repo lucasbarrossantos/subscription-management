@@ -66,7 +66,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(SubscriptionAlreadyCanceledException.class)
     public ResponseEntity<Object> handleSubscriptionAlreadyCanceled(SubscriptionAlreadyCanceledException ex, WebRequest request) {
-        HttpStatus status = HttpStatus.UNPROCESSABLE_ENTITY;
+        HttpStatus status = HttpStatus.UNPROCESSABLE_CONTENT;
         ProblemType problemType = ProblemType.BUSINESS_ERROR;
         String detail = ex.getMessage();
 

@@ -1,5 +1,7 @@
 # Subscription Management
 
+![Arquitetura da Solução](desenho-solucao.png)
+
 Sistema de gerenciamento de assinaturas desenvolvido com Spring Boot seguindo a arquitetura hexagonal (Ports & Adapters). O sistema permite gerenciar assinaturas de usuários com múltiplos planos de assinatura e integra-se com um serviço externo de carteira para processamento de pagamentos.
 
 ## Funcionalidades
