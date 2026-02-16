@@ -1,6 +1,7 @@
 package com.globo.subscription.core.usecase.subscription;
 
 import com.globo.subscription.core.domain.Subscription;
+import com.globo.subscription.core.domain.User;
 import com.globo.subscription.core.domain.enums.SubscriptionStatus;
 import com.globo.subscription.core.exception.SubscriptionNotFoundException;
 import com.globo.subscription.core.port.out.subscription.ActiveSubscriptionCachePort;
@@ -19,6 +20,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -42,7 +44,7 @@ class UpdateSubscriptionStatusUseCaseTest {
         UUID id = UUID.randomUUID();
         Subscription subscription = new Subscription();
         subscription.setStatus(SubscriptionStatus.PENDING);
-        com.globo.subscription.core.domain.User user = new com.globo.subscription.core.domain.User();
+        User user = new User();
         user.setId(UUID.randomUUID());
         subscription.setUser(user);
         when(repositoryPort.findById(id)).thenReturn(Optional.of(subscription));
@@ -68,13 +70,19 @@ class UpdateSubscriptionStatusUseCaseTest {
         UUID id = UUID.randomUUID();
         Subscription subscription = new Subscription();
         subscription.setStatus(SubscriptionStatus.ACTIVE);
-        com.globo.subscription.core.domain.User user = new com.globo.subscription.core.domain.User();
+        User user = new User();
         user.setId(UUID.randomUUID());
         subscription.setUser(user);
         when(repositoryPort.findById(id)).thenReturn(Optional.of(subscription));
-        useCase.execute(id, "ACTIVE");
-        verify(repositoryPort, org.mockito.Mockito.never()).save(any());
-        verify(activeSubscriptionCachePort, org.mockito.Mockito.never()).putActiveSubscription(any(), any(), anyLong());
+
+        // Espera a exceção SubscriptionAlreadyUpdatedException
+        assertThrows(com.globo.subscription.core.exception.SubscriptionAlreadyUpdatedException.class, () ->
+            useCase.execute(id, "ACTIVE")
+        );
+
+        // Garante que não houve persistência nem cache
+        verify(repositoryPort, never()).save(any());
+        verify(activeSubscriptionCachePort, never()).putActiveSubscription(any(), any(), anyLong());
     }
 
     @Test
@@ -82,7 +90,7 @@ class UpdateSubscriptionStatusUseCaseTest {
         UUID id = UUID.randomUUID();
         Subscription subscription = new Subscription();
         subscription.setStatus(SubscriptionStatus.PENDING);
-        com.globo.subscription.core.domain.User user = new com.globo.subscription.core.domain.User();
+        User user = new User();
         user.setId(UUID.randomUUID());
         subscription.setUser(user);
         when(repositoryPort.findById(id)).thenReturn(Optional.of(subscription));
