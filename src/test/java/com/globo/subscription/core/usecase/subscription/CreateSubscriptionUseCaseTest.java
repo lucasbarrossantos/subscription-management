@@ -11,11 +11,15 @@ import com.globo.subscription.core.port.out.user.UserRepositoryPort;
 import com.globo.subscription.core.port.out.payment.PaymentPort;
 import com.globo.subscription.core.port.out.subscription.ActiveSubscriptionCachePort;
 import com.globo.subscription.core.port.out.wallet.WalletPort;
+import com.globo.subscription.core.usecase.subscription.strategy.PlanChangeStrategy;
+import com.globo.subscription.core.usecase.subscription.strategy.PlanChangeStrategyResolver;
+import java.math.BigDecimal;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -30,6 +34,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class CreateSubscriptionUseCaseTest {
 
     @Mock
@@ -42,6 +47,8 @@ class CreateSubscriptionUseCaseTest {
     private ActiveSubscriptionCachePort activeSubscriptionCachePort;
     @Mock
     private WalletPort walletPort;
+    @Mock
+    private PlanChangeStrategyResolver planChangeStrategyResolver;
 
     @InjectMocks
     private CreateSubscriptionUseCase useCase;
@@ -51,15 +58,13 @@ class CreateSubscriptionUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        try (AutoCloseable ignored = MockitoAnnotations.openMocks(this)) {
-            user = new User();
-            user.setId(UUID.randomUUID());
-            subscription = new Subscription();
-            subscription.setUser(user);
-            subscription.setPlan(TypePlan.BASIC);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        user = new User();
+        user.setId(UUID.randomUUID());
+        subscription = new Subscription();
+        subscription.setUser(user);
+        subscription.setPlan(TypePlan.BASIC);
+
+        // resolver is mocked per-test where needed
     }
 
     @Test
@@ -108,6 +113,25 @@ class CreateSubscriptionUseCaseTest {
         upgrade.setUser(user);
         upgrade.setPlan(TypePlan.PREMIUM);
 
+        // mock resolver behavior for plan change
+        when(planChangeStrategyResolver.resolve(any(), any())).thenAnswer(invocation -> {
+            return new PlanChangeStrategy() {
+                @Override
+                public Subscription apply(Subscription existingSubscription, TypePlan newPlan, User user) {
+                    TypePlan oldPlan = existingSubscription.getPlan();
+                    BigDecimal oldPrice = oldPlan.getPrice();
+                    BigDecimal newPrice = newPlan.getPrice();
+                    BigDecimal difference = newPrice.subtract(oldPrice);
+                    paymentPort.debitAmount(user.getId(), difference,
+                            String.format("Upgrade de plano: %s para %s (diferença)", oldPlan.getDescription(), newPlan.getDescription()),
+                            existingSubscription.getId());
+                    existingSubscription.setStatus(com.globo.subscription.core.domain.enums.SubscriptionStatus.PENDING);
+                    existingSubscription.setPlan(newPlan);
+                    when(subscriptionRepositoryPort.save(any())).thenReturn(existingSubscription);
+                    return subscriptionRepositoryPort.save(existingSubscription);
+                }
+            };
+        });
         when(userRepositoryPort.findById(any())).thenReturn(Optional.of(user));
         when(walletPort.existsWallet(any())).thenReturn(true);
         when(subscriptionRepositoryPort.findActiveByUserId(any())).thenReturn(Optional.empty());
@@ -133,6 +157,28 @@ class CreateSubscriptionUseCaseTest {
         downgrade.setUser(user);
         downgrade.setPlan(TypePlan.BASIC);
 
+        // mock resolver behavior for plan change
+        when(planChangeStrategyResolver.resolve(any(), any())).thenAnswer(invocation -> {
+            return new PlanChangeStrategy() {
+                @Override
+                public Subscription apply(Subscription existingSubscription, TypePlan newPlan, User user) {
+                    TypePlan oldPlan = existingSubscription.getPlan();
+                    BigDecimal oldPrice = oldPlan.getPrice();
+                    BigDecimal newPrice = newPlan.getPrice();
+                    BigDecimal difference = oldPrice.subtract(newPrice);
+                    paymentPort.creditRefund(user.getId(), difference,
+                            String.format("Estorno de diferença - Mudança de %s para %s", oldPlan.getDescription(), newPlan.getDescription()),
+                            existingSubscription.getId());
+                    paymentPort.debitAmount(user.getId(), newPrice,
+                            String.format("Cobrança do novo plano após downgrade: %s", newPlan.getDescription()),
+                            existingSubscription.getId());
+                    existingSubscription.setStatus(com.globo.subscription.core.domain.enums.SubscriptionStatus.PENDING);
+                    existingSubscription.setPlan(newPlan);
+                    when(subscriptionRepositoryPort.save(any())).thenReturn(existingSubscription);
+                    return subscriptionRepositoryPort.save(existingSubscription);
+                }
+            };
+        });
         when(userRepositoryPort.findById(any())).thenReturn(Optional.of(user));
         when(walletPort.existsWallet(any())).thenReturn(true);
         when(subscriptionRepositoryPort.findActiveByUserId(any())).thenReturn(Optional.empty());
@@ -159,6 +205,18 @@ class CreateSubscriptionUseCaseTest {
         reactivation.setUser(user);
         reactivation.setPlan(TypePlan.BASIC);
 
+        // mock resolver behavior for reactivation
+        when(planChangeStrategyResolver.resolve(any(), any())).thenAnswer(invocation -> {
+            return new PlanChangeStrategy() {
+                @Override
+                public Subscription apply(Subscription existingSubscription, TypePlan newPlan, User user) {
+                    existingSubscription.setStatus(com.globo.subscription.core.domain.enums.SubscriptionStatus.ACTIVE);
+                    existingSubscription.setPlan(newPlan);
+                    when(subscriptionRepositoryPort.save(any())).thenReturn(existingSubscription);
+                    return subscriptionRepositoryPort.save(existingSubscription);
+                }
+            };
+        });
         when(userRepositoryPort.findById(any())).thenReturn(Optional.of(user));
         when(walletPort.existsWallet(any())).thenReturn(true);
         when(subscriptionRepositoryPort.findActiveByUserId(any())).thenReturn(Optional.empty());
@@ -185,6 +243,18 @@ class CreateSubscriptionUseCaseTest {
         samePrice.setUser(user);
         samePrice.setPlan(TypePlan.PREMIUM);
 
+        // mock resolver behavior for same-price change
+        when(planChangeStrategyResolver.resolve(any(), any())).thenAnswer(invocation -> {
+            return new PlanChangeStrategy() {
+                @Override
+                public Subscription apply(Subscription existingSubscription, TypePlan newPlan, User user) {
+                    existingSubscription.setStatus(com.globo.subscription.core.domain.enums.SubscriptionStatus.PENDING);
+                    existingSubscription.setPlan(newPlan);
+                    when(subscriptionRepositoryPort.save(any())).thenReturn(existingSubscription);
+                    return subscriptionRepositoryPort.save(existingSubscription);
+                }
+            };
+        });
         when(userRepositoryPort.findById(any())).thenReturn(Optional.of(user));
         when(walletPort.existsWallet(any())).thenReturn(true);
         when(subscriptionRepositoryPort.findActiveByUserId(any())).thenReturn(Optional.empty());
